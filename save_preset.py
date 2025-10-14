@@ -1,27 +1,28 @@
+ 
+
 import json
 
-# Initialize an empty dictionary to store preset values
-preset_values = []
+def get_user_input(prompt):
+    while True:
+        try:
+            value = int(input(f"Please enter {prompt}: "))
+            if 0 <= value <= 10000000:  # Ensure input is within a reasonable range
+                return value
+            else:
+                print("Invalid input. Please enter a number within the specified range.")
+        except ValueError:
+            print("Invalid input. Please enter a numeric value.")
 
-def save_preset(base_value, current_bonus):
-    """Save preset values to a file."""
-    preset_values = {
-        'base_value': base_value,
-        'current_bonus': current_bonus,}
-    filename = 'preset.json'
+def save_preset(values):
     try:
-        with open(filename, 'w') as f:
-            json.dump(preset_values, f)
+        with open('preset.json', 'w') as f:
+            json.dump(values, f)
     except Exception as e:
         print(f"Error saving preset values: {e}")
 
 def load_preset():
-    """Load preset values from a file."""
-    preset_values
-    filename = 'preset.json'
     try:
-        with open(filename, 'r') as f:
+        with open('preset.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         return {}
-    
