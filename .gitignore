@@ -1,3 +1,4 @@
 preset.json
 __pycache__
 *.pyc
+salary_calculator.db
