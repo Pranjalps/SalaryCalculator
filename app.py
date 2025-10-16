@@ -39,35 +39,31 @@ class SalaryCalculator:
     def create_table(self):
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS calculations
-            (id INTEGER PRIMARY KEY, base_value REAL, current_bonus REAL, percent_increase REAL, new_basic REAL, new_allowance REAL, new_pf REAL, new_gratuity REAL, new_salary REAL, ctc REAL, in_hand REAL)
+            (id INTEGER PRIMARY KEY, base_value REAL, new_bonus REAL, percent_increase REAL, new_basic REAL, new_allowance REAL, new_pf REAL, new_gratuity REAL, new_salary REAL, ctc REAL, in_hand REAL)
         ''')
         self.conn.commit()
     def get_user_input(self):
         base_value = self.base_value_entry.get()
-        current_bonus = self.current_bonus_entry.get()
         percent_increase = self.percent_increase_entry.get()
 
         try:
             base_value = int(base_value)
-            current_bonus = int(current_bonus)
             percent_increase = float(percent_increase)  # Allow for decimal values
         except ValueError:
             messagebox.showerror("Error", "Invalid input. Please enter numeric values.")
-            return None, None, None
+            return None, None
 
         if not (0 <= base_value <= 10000000):  # Ensure input is within a reasonable range
             messagebox.showerror("Error", "Base value must be between 0 and 1,000,000")
-            return None, None, None
+            return None, None
 
-        return base_value, current_bonus, percent_increase
+        return base_value, percent_increase
 
     def calculate_salary(self):
 
-        if len(self.calculations) > 10:
-            self.calculations.pop(0)
-
         new_basic = int(self.base_value_entry.get()) + (int(self.base_value_entry.get()) * (float(self.percent_increase_entry.get()) / 100))
-        new_allowance = int(new_basic) * 0.63 + int(self.current_bonus_entry.get())
+        new_allowance = int(new_basic) * 0.63 
+        new_bonus = int(new_basic) * 0.2
         new_pf = int(new_basic) * 0.12
         new_gratuity = int(new_basic) * 0.05
         new_salary = int(new_basic) + int(new_allowance) + int(new_pf) + int(new_gratuity)
@@ -75,10 +71,11 @@ class SalaryCalculator:
         in_hand = int(new_basic) + int(new_allowance) - int(new_pf)
         self.calculations.append({
             'base_value': int(self.base_value_entry.get()),
-            'current_bonus': int(self.current_bonus_entry.get()),
             'percent_increase': float(self.percent_increase_entry.get()),
+            'New_bonus': int(new_bonus),
             'new_basic': int(new_basic),
             'new_allowance': int(new_allowance), 
+            'new_bonus': int(new_bonus),
             'new_pf': int(new_pf),
             'new_gratuity': int(new_gratuity),
             'new_salary': int(new_salary),
@@ -96,12 +93,10 @@ class SalaryCalculator:
             return
 
         base_value = int(self.base_value_entry.get())
-        current_bonus = int(self.current_bonus_entry.get())
         percent_increase = float(self.percent_increase_entry.get())
 
         self.presets[name] = {
             'base_value': base_value,
-            'current_bonus': current_bonus,
             'percent_increase': percent_increase
         }
 
@@ -125,12 +120,10 @@ class SalaryCalculator:
             return
 
         base_value = int(self.base_value_entry.get())
-        current_bonus = int(self.current_bonus_entry.get())
         percent_increase = float(self.percent_increase_entry.get())
 
         self.presets[name] = {
             'base_value': base_value,
-            'current_bonus': current_bonus,
             'percent_increase': percent_increase
         }
 
@@ -138,54 +131,62 @@ class SalaryCalculator:
             json.dump(self.presets, f)
 
     def update_labels(self):
-        for i, calculation in enumerate(self.calculations):
-            #tk.Label(self.root, text=f"Calculation {i+1}:").grid(row=i+8, column=0)
-            tk.Label(self.root, text="Base Value: " + str(calculation['base_value'])).grid(row=i+9, column=0)
-            tk.Label(self.root, text="Current Bonus: " + str(calculation['current_bonus'])).grid(row=i+10, column=0)
-            tk.Label(self.root, text="Percent Increase: " + str(calculation['percent_increase'])).grid(row=i+11, column=0)
-            tk.Label(self.root, text="New Basic: " + str(calculation.get('new_basic', 0))).grid(row=i+9, column=1)
-            tk.Label(self.root, text="New Allowance: " + str(calculation.get('new_allowance', 0))).grid(row=i+10, column=1)
-            tk.Label(self.root, text="New PF: " + str(calculation.get('new_pf', 0))).grid(row=i+11, column=1)
-            tk.Label(self.root, text="New Gratuity: " + str(calculation.get ('new_gratuity', 0))).grid(row=i+9, column=2)
-            tk.Label(self.root, text="New Salary: " + str(calculation.get('new_salary', 0))).grid(row=i+10, column=2)
-            tk.Label(self.root, text="CTC: " + str(calculation.get('ctc', 0))).grid(row=i+11, column=2)
-            tk.Label(self.root, text="In-hand salary: " + str(calculation.get('in_hand', 0))).grid(row=i+9, column=3)   
+        calculation = self.calculations[-1] #if self.calculations else {tk.Label(self.root, text="No calculations yet").grid(row=1, column=0)}
+        self.update_window = tk.Toplevel(self.root)
+        self.update_label = Label(self.update_window, text="Result")
+        self.update_label.grid(row=0, column=0)
+        tk.Label(self.update_window, text=f"Calculation :").grid(row=1, column=0)
+        tk.Label(self.update_window, text="Base Value: " + str(calculation['base_value'])).grid(row=2, column=0)
+        tk.Label(self.update_window, text="New Bonus: " + str(calculation['new_bonus'])).grid(row=3, column=0)
+        tk.Label(self.update_window, text="Percent Increase: " + str(calculation['percent_increase'])).grid(row=4, column=0)
+        tk.Label(self.update_window, text="New Basic: " + str(calculation.get('new_basic', 0))).grid(row=2, column=1)
+        tk.Label(self.update_window, text="New Allowance: " + str(calculation.get('new_allowance', 0))).grid(row=3, column=1)
+        tk.Label(self.update_window, text="New PF: " + str(calculation.get('new_pf', 0))).grid(row=4, column=1)
+        tk.Label(self.update_window, text="New Gratuity: " + str(calculation.get ('new_gratuity', 0))).grid(row=2, column=2)
+        tk.Label(self.update_window, text="New Salary: " + str(calculation.get('new_salary', 0))).grid(row=3, column=2)
+        tk.Label(self.update_window, text="CTC: " + str(calculation.get('ctc', 0))).grid(row=4, column=2)
+        tk.Label(self.update_window, text="In-hand salary: " + str(calculation.get('in_hand', 0))).grid(row=2, column=3)   
     def save_to_database(self):
         for calculation in self.calculations:
             self.cursor.execute('''
-                INSERT INTO calculations (base_value, current_bonus, percent_increase, new_basic, new_allowance, new_pf, new_gratuity, new_salary, ctc, in_hand)
+                INSERT INTO calculations (base_value, new_bonus, percent_increase, new_basic, new_allowance, new_pf, new_gratuity, new_salary, ctc, in_hand)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (calculation['base_value'], calculation['current_bonus'], calculation['percent_increase'], calculation['new_basic'], calculation['new_allowance'], 
+            ''', (calculation['base_value'], calculation['new_bonus'], calculation['percent_increase'], calculation['new_basic'], calculation['new_allowance'], 
                   calculation['new_pf'], calculation['new_gratuity'], calculation['new_salary'], calculation['ctc'], calculation['in_hand']))
         self.conn.commit()
     def display_calculations(self):
         for i in range(8, len(self.calculations)+9):
+            self.update_window = tk.Toplevel(self.root)
+            self.update_label = Label(self.update_window, text="Result")
+            self.update_label.grid(row=0, column=0)
             #tk.Label(self.root, text=f"Calculation {i-7}:").grid(row=i, column=0)
             if i >= 9:
                 base_value = self.calculations[i-8].get('base_value', 0)
-                current_bonus = self.calculations[i-8].get('current_bonus', 0)
+                new_bonus = self.calculations[i-8].get('new_bonus', 0)
                 percent_increase = self.calculations[i-8].get('percent_increase', 0)
 
-                tk.Label(self.root, text="Base Value: " + str(base_value)).grid(row=i, column=1)
-                tk.Label(self.root, text="Current Bonus: " + str(current_bonus)).grid(row=i, column=2)
-                tk.Label(self.root, text="Percent Increase: " + str(percent_increase)).grid(row=i, column=3)
+                tk.Label(self.update_window, text="Base Value: " + str(base_value)).grid(row=i, column=1)
+                tk.Label(self.update_window, text="New Bonus: " + str(new_bonus)).grid(row=i, column=2)
+                tk.Label(self.update_window, text="Percent Increase: " + str(percent_increase)).grid(row=i, column=3)
 
             if i >= 9:
                 new_basic = self.calculations[i-8].get('new_basic', 0)
                 new_allowance = self.calculations[i-8].get('new_allowance', 0)
+                new_bonus = self.calculations[i-8].get('new_bonus', 0)
                 new_pf = self.calculations[i-8].get('new_pf', 0)
                 new_gratuity = self.calculations[i-8].get('new_gratuity', 0)
                 new_salary = self.calculations[i-8].get('new_salary', 0)
                 ctc = self.calculations[i-8].get('ctc', 0)
                 in_hand = self.calculations[i-8].get('in_hand', 0)
 
-                tk.Label(self.root, text="New Basic: " + str(new_basic)).grid(row=i, column=4)
-                tk.Label(self.root, text="New Allowance: " + str(new_allowance)).grid(row=i, column=5)
-                tk.Label(self.root, text="New PF: " + str(new_pf)).grid(row=i, column=6)
-                tk.Label(self.root, text="New Gratuity: " + str(new_gratuity)).grid(row=i, column=7)
-                tk.Label(self.root, text="New Salary: " + str(new_salary)).grid(row=i, column=8)
-                tk.Label(self.root, text="CTC: " + str(ctc)).grid(row=i, column=9)
-                tk.Label(self.root, text="In-hand salary: " + str(in_hand)).grid(row=i, column=10)
+                tk.Label(self.update_window, text="New Basic: " + str(new_basic)).grid(row=i, column=4)
+                tk.Label(self.update_window, text="New Allowance: " + str(new_allowance)).grid(row=i, column=5)
+                tk.Label(self.update_window, text="New Bonus: " + str(new_bonus)).grid(row=i, column=5)
+                tk.Label(self.update_window, text="New PF: " + str(new_pf)).grid(row=i, column=6)
+                tk.Label(self.update_window, text="New Gratuity: " + str(new_gratuity)).grid(row=i, column=7)
+                tk.Label(self.update_window, text="New Salary: " + str(new_salary)).grid(row=i, column=8)
+                tk.Label(self.update_window, text="CTC: " + str(ctc)).grid(row=i, column=9)
+                tk.Label(self.update_window, text="In-hand salary: " + str(in_hand)).grid(row=i, column=10)
         
     def search_calculations(self):
         id = self.search_entry.get()
@@ -212,7 +213,7 @@ class SalaryCalculator:
         tk.Label(self.search_window, text="Base Value: ").grid(row=1, column=0)
         tk.Label(self.search_window, text=str(result[1])).grid(row=1, column=1)
 
-        tk.Label(self.search_window, text="Current Bonus: ").grid(row=2, column=0)
+        tk.Label(self.search_window, text="New Bonus: ").grid(row=2, column=0)
         tk.Label(self.search_window, text=str(result[2])).grid(row=2, column=1)
 
         tk.Label(self.search_window, text="Percent Increase: ").grid(row=3, column=0)
@@ -259,26 +260,45 @@ class SalaryCalculator:
         self.update_window = tk.Toplevel(self.root)
         self.update_label = Label(self.update_window, text="Update")
         self.update_label.grid(row=0, column=0)
-
+        calculation = self.calculations[-1] if self.calculations else {tk.Label(self.update_window, text="No calculations yet").grid(row=1, column=0)}
         tk.Label(self.update_window, text="Base Value: ").grid(row=1, column=0)
-        tk.Entry(self.update_window).grid(row=1, column=1)
-
-        tk.Label(self.update_window, text="Current Bonus: ").grid(row=2, column=0)
-        tk.Entry(self.update_window).grid(row=2, column=1)
+        tk.Entry(self.update_window,  str(calculation['base_value'])).grid(row=1, column=1)
 
         tk.Label(self.update_window, text="Percent Increase: ").grid(row=3, column=0)
-        tk.Entry(self.update_window).grid(row=3, column=1)
+        tk.Entry(self.update_window ,  str(calculation['percent_increase'])).grid(row=3, column=1)
+
+        tk.Label(self.update_window, text="New Basic: ").grid(row=4, column=0)
+        tk.Entry(self.update_window, str(calculation['new_basic'])).grid(row=4, column=1)
+        tk.Label(self.update_window, text="New Allowance: ").grid(row=5, column=0)
+        tk.Entry(self.update_window, str(calculation['new_allowance'])).grid(row=5, column=1)
+        tk.Label(self.update_window, text="New Bonus: ").grid(row=2, column=0)
+        tk.Entry(self.update_window, str(calculation['new_bonus'])).grid(row=2, column=1)
+        tk.Label(self.update_window, text="New PF: ").grid(row=6, column=0)
+        tk.Entry(self.update_window, str(calculation['new_pf'])).grid(row=6, column=1)
+        tk.Label(self.update_window, text="New Gratuity: ").grid(row=7, column=0)
+        tk.Entry(self.update_window, str(calculation['new_gratitude'])).grid(row=7, column=1)
+        tk.Label(self.update_window, text="New Salary: ").grid(row=8, column=0)
+        tk.Entry(self.update_window, str(calculation['new_salary'])).grid(row=8, column=1)
+        tk.Label(self.update_window, text="CTC: ").grid(row=9, column=0)
+        tk.Entry(self.update_window, str(calculation['ctc'])).grid(row=9, column=1)
+        tk.Label(self.update_window, text="In-hand salary: ").grid(row=10, column=0)
+        tk.Entry(self.update_window, str(calculation['in_hand'])).grid(row=10, column=1)
+
     def main(self):
-        self.create_table()
+        #check if table already exist or not if not create it.
+        if not self.conn:
+            self.conn = sqlite3.connect(self.db_name)
+            self.cursor = self.conn.cursor()
+            self.create_table()
         self.base_value_label = Label(self.root, text="Base Value:")
         self.base_value_label.grid(row=0, column=0)
         self.base_value_entry = tk.Entry(self.root)
         self.base_value_entry.grid(row=0, column=1)
 
-        self.current_bonus_label = Label(self.root, text="Current Bonus:")
+        """self.current_bonus_label = Label(self.root, text="New Bonus:")
         self.current_bonus_label.grid(row=1, column=0)
         self.current_bonus_entry = tk.Entry(self.root)
-        self.current_bonus_entry.grid(row=1, column=1)
+        self.current_bonus_entry.grid(row=1, column=1)"""
 
         self.percent_increase_label = Label(self.root, text="Percent Increase:")
         self.percent_increase_label.grid(row=2, column=0)
@@ -315,7 +335,7 @@ class SalaryCalculator:
 
         self.delete_button = tk.Button(self.root, text="Delete", command=self.delete_calculation)
         self.delete_button.grid(row=7, column=3, columnspan=1)
-
+        #self.update_window()
 
     def run(self):
         self.main()
