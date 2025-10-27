@@ -66,9 +66,9 @@ class SalaryCalculator:
         new_bonus = int(new_basic) * 0.2
         new_pf = int(new_basic) * 0.12
         new_gratuity = int(new_basic) * 0.05
-        new_salary = int(new_basic) + int(new_allowance) + int(new_pf) + int(new_gratuity)
+        new_salary = int(new_basic) + int(new_allowance) + int(new_pf) + int(new_gratuity) + int(new_bonus)
         ctc = int(new_salary) * 12
-        in_hand = int(new_basic) + int(new_allowance) - int(new_pf)
+        in_hand = int(new_basic) + int(new_allowance) - int(new_pf) + int(new_bonus)
         self.calculations.append({
             'base_value': int(self.base_value_entry.get()),
             'percent_increase': float(self.percent_increase_entry.get()),

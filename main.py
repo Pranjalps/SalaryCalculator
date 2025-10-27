@@ -20,7 +20,8 @@ def main():
     if percent_increase == 0 :
         percent_increase = get_user_input("Please enter the percent increase (only value without %): ")
     else:
-        choice = input("Using preset value for percentage. Do you want to change percentage increase? (yes/no)" or "no")
+        choice = input("Using preset value for percentage. Do you want to change percentage increase? (yes/no)" or
+                        "no")
         if(choice.lower() == "yes"):
             percent_increase = get_user_input("Please enter the percent increase (only value without %): ")
             if percent_increase < 0:
